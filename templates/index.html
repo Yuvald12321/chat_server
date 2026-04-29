@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="he">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Chat Client</title>
+    <style>
+        body { background-color: #1a1a1a; color: white; font-family: sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
+        .chat-container { width: 100%; max-width: 400px; height: 100dvh; max-height: 600px; background-color: #242424; border-radius: 15px; display: flex; flex-direction: column; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+        #chat-display { flex: 1; padding: 15px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; border-bottom: 1px solid #333; }
+        .message { background-color: #333; padding: 10px; border-radius: 10px; font-size: 14px; line-height: 1.4; word-wrap: break-word; }
+        .input-area { padding: 15px; display: flex; gap: 10px; background-color: #2b2b2b; }
+        input { flex: 1; background-color: #333; border: none; padding: 10px; color: white; border-radius: 5px; outline: none; }
+        button { background-color: #3b82f6; color: white; border: none; padding: 10px 15px; border-radius: 5px; cursor: pointer; font-weight: bold; }
+        button:hover { background-color: #2563eb; }
+    </style>
+</head>
+<body>
+
+<div class="chat-container">
+    <div id="chat-display"></div>
+    <div class="input-area">
+        <input type="text" id="msg-input" placeholder="Type message...">
+        <button onclick="sendMessage()">Send</button>
+    </div>
+</div>
+
+<script>
+    let nickname = "";
+    let lastCount = 0;
+
+    async function startChat() {
+        nickname = prompt("Enter nickname:") || "Guest";
+
+        try {
+            await fetch('/join', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ nickname: nickname })
+            });
+        } catch (error) {
+            console.error("Error joining:", error);
+        }
+
+        setInterval(fetchMessages, 1000);
+    }
+
+    async function fetchMessages() {
+        try {
+            const response = await fetch('/get_data');
+            const data = await response.json();
+
+            if (data.messages.length > lastCount) {
+                const display = document.getElementById('chat-display');
+                for (let i = lastCount; i < data.messages.length; i++) {
+                    const div = document.createElement('div');
+                    div.className = 'message';
+                    let rawMsg = data.messages[i];
+                    if (rawMsg.includes(" | ")) {
+                        div.textContent = rawMsg.split(" | ")[1];
+                    } else {
+                        div.textContent = rawMsg;
+                    }
+                    display.appendChild(div);
+                }
+                lastCount = data.messages.length;
+                display.scrollTop = display.scrollHeight;
+            }
+        } catch (error) {
+            console.error("Error fetching messages:", error);
+        }
+    }
+
+    async function sendMessage() {
+        const input = document.getElementById('msg-input');
+        const text = input.value.trim();
+        if (!text) return;
+
+        try {
+            await fetch('/send_message', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ message: `${nickname}: ${text}` })
+            });
+            input.value = '';
+        } catch (error) {
+            console.error("Error sending message:", error);
+        }
+    }
+
+    document.getElementById('msg-input').addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') sendMessage();
+    });
+
+    window.onload = startChat;
+</script>
+
+</body>
+</html>
