@@ -1,8 +1,9 @@
 from flask import Flask, render_template, request, jsonify
 import tkinter as tk
+from PIL import ImageTk
 from tkinter import scrolledtext, messagebox
 from ctypes import windll
-import threading, sys, subprocess, socket, time, logging
+import threading, sys, subprocess, socket, time, logging, qrcode
 
 def has_access(rule_name):
     try:
@@ -84,7 +85,7 @@ def send_message():
     data = request.json
     if data and "message" in data:
         ip_addr = int(request.remote_addr.split(".")[-1])
-        chat_messages.append(f"{ip_addr:3} | {"⚠: " if ":" not in data["message"] else ""}{data["message"]}")
+        chat_messages.append(f"{ip_addr} | {"⚠: " if ":" not in data["message"] else ""}{data["message"]}")
         return jsonify({"status": "ok"})
     return jsonify({"status": "error"}), 400
 
@@ -109,6 +110,16 @@ def get_active_ips():
     active = [ip for ip, last_seen in active_clients.items() if current_time - last_seen < 2.0]
     return active
 
+def qr_code_image(url):
+    qroot = tk.Toplevel()
+    qroot.title("QR Code")
+    qroot.resizable(False, False)
+    qr = qrcode.make(url)
+    img = ImageTk.PhotoImage(qr)
+    qr_label = tk.Label(qroot, image=img)
+    qr_label.image = img
+    qr_label.pack()
+
 def run_flask():
     global port
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
@@ -131,6 +142,8 @@ class ServerGUI:
         tk.Label(self.sidebar, text="Connected", bg="#333333", fg="#4b6eaf", font=("Arial", 10, "bold")).pack(pady=5)
         self.ips_listbox = tk.Listbox(self.sidebar, bg="#1e1e1e", fg="#00ff00", borderwidth=0, highlightthickness=0, width=13)
         self.ips_listbox.pack(fill="both", expand=True, padx=5, pady=5)
+        self.qr_button = tk.Button(self.sidebar, text="Show QR", command=lambda: qr_code_image(f"http://{get_local_ip()}:{port}"), bg="#4b6eaf", fg="white")
+        self.qr_button.pack(fill="x", pady=5)
         self.main_frame = tk.Frame(self.root, bg="#2b2b2b")
         self.main_frame.pack(fill="both", expand=True, padx=10, pady=10)
         self.chat_frame = tk.Frame(self.main_frame, bg="#2b2b2b")
