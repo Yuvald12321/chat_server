@@ -1,9 +1,16 @@
-from flask import Flask, render_template, request, jsonify
+import logging
+import qrcode
+import socket
+import subprocess
+import sys
+import threading
+import time
 import tkinter as tk
-from PIL import ImageTk
-from tkinter import scrolledtext, messagebox
 from ctypes import windll
-import threading, sys, subprocess, socket, time, logging, qrcode
+from tkinter import scrolledtext, messagebox
+from PIL import ImageTk
+from flask import Flask, render_template, request, jsonify
+
 
 def has_access(rule_name):
     try:
@@ -12,6 +19,7 @@ def has_access(rule_name):
         return "No rules match" not in result.stdout
     except:
         return False
+
 
 def get_access(rule_name):
     if windll.shell32.IsUserAnAdmin() == 0:
@@ -23,6 +31,7 @@ def get_access(rule_name):
         except Exception as e:
             messagebox.showerror("Error", str(e))
     sys.exit()
+
 
 def remove_access(rule_name):
     if windll.shell32.IsUserAnAdmin() == 0:
@@ -36,6 +45,7 @@ def remove_access(rule_name):
             messagebox.showerror("Error", str(e))
     sys.exit()
 
+
 def get_local_ip():
     with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
         try:
@@ -45,12 +55,14 @@ def get_local_ip():
             ip = "127.0.0.1"
         return ip
 
+
 class ListHandler(logging.Handler):
     def emit(self, record):
         log_entry = self.format(record)
         server_logs.append(log_entry)
         if len(server_logs) > 100:
             server_logs.pop(0)
+
 
 server_logs = []
 logger = logging.getLogger('werkzeug')
@@ -62,9 +74,11 @@ app = Flask(__name__)
 chat_messages = []
 active_clients = {}
 
+
 @app.route("/")
 def index():
     return render_template("index.html")
+
 
 @app.route("/join", methods=["POST"])
 def join_chat():
@@ -74,11 +88,13 @@ def join_chat():
     chat_messages.append(f"System: {nickname} ({ip_addr}) joined the chat")
     return jsonify({"status": "ok"})
 
+
 @app.route("/get_data")
 def get_data():
     ip_addr = request.remote_addr
     active_clients[ip_addr] = time.time()
     return jsonify({"messages": chat_messages})
+
 
 @app.route("/send_message", methods=["POST"])
 def send_message():
@@ -88,6 +104,7 @@ def send_message():
         chat_messages.append(f"{ip_addr} | {"⚠: " if ":" not in data["message"] else ""}{data["message"]}")
         return jsonify({"status": "ok"})
     return jsonify({"status": "error"}), 400
+
 
 @app.route("/log")
 def log():
@@ -105,10 +122,12 @@ def log():
 </html>
 """
 
+
 def get_active_ips():
     current_time = time.time()
     active = [ip for ip, last_seen in active_clients.items() if current_time - last_seen < 2.0]
     return active
+
 
 def qr_code_image(url):
     qroot = tk.Toplevel()
@@ -120,6 +139,7 @@ def qr_code_image(url):
     qr_label.image = img
     qr_label.pack()
 
+
 def run_flask():
     global port
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
@@ -129,6 +149,7 @@ def run_flask():
             sock.bind(("0.0.0.0", 0))
         port = sock.getsockname()[1]
     app.run(host='0.0.0.0', port=port, debug=False, use_reloader=False)
+
 
 class ServerGUI:
     def __init__(self, root):
