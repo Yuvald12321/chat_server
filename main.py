@@ -1,4 +1,6 @@
+import json
 import logging
+import qrcode
 import socket
 import subprocess
 import sys
@@ -7,9 +9,8 @@ import time
 import tkinter as tk
 from ctypes import windll
 from tkinter import scrolledtext, messagebox
-import qrcode
 from PIL import ImageTk
-from flask import Flask, render_template, request, jsonify
+from flask import Flask, render_template, request, jsonify, Response
 
 
 def has_access(rule_name):
@@ -89,11 +90,23 @@ def join_chat():
     return jsonify({"status": "ok"})
 
 
-@app.route("/get_data")
-def get_data():
+def message_generator(ip_addr):
+    last_count = 0
+    while True:
+        active_clients[ip_addr] = time.time()
+
+        if len(chat_messages) > last_count:
+            last_count = len(chat_messages)
+            json_data = json.dumps({"messages": chat_messages})
+            yield f"data: {json_data}\n\n"
+
+        time.sleep(0.2)
+
+
+@app.route("/stream")
+def stream():
     ip_addr = request.remote_addr
-    active_clients[ip_addr] = time.time()
-    return jsonify({"messages": chat_messages})
+    return Response(message_generator(ip_addr), mimetype="text/event-stream")
 
 
 @app.route("/send_message", methods=["POST"])
@@ -101,7 +114,7 @@ def send_message():
     data = request.json
     if data and "message" in data:
         ip_addr = int(request.remote_addr.split(".")[-1])
-        chat_messages.append(f"{ip_addr} | {"⚠: " if ":" not in data["message"] else ""}{data["message"]}")
+        chat_messages.append(f"{ip_addr} | {'⚠: ' if ':' not in data['message'] else ''}{data['message']}")
         return jsonify({"status": "ok"})
     return jsonify({"status": "error"}), 400
 
@@ -125,7 +138,7 @@ def log():
 
 def get_active_ips():
     current_time = time.time()
-    active = [ip for ip, last_seen in active_clients.items() if current_time - last_seen < 2.0]
+    active = [ip for ip, last_seen in active_clients.items() if current_time - last_seen < 4.0]
     return active
 
 
