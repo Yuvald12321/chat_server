@@ -1,5 +1,4 @@
 import logging
-import qrcode
 import socket
 import subprocess
 import sys
@@ -8,6 +7,7 @@ import time
 import tkinter as tk
 from ctypes import windll
 from tkinter import scrolledtext, messagebox
+import qrcode
 from PIL import ImageTk
 from flask import Flask, render_template, request, jsonify
 
@@ -65,9 +65,9 @@ class ListHandler(logging.Handler):
 
 
 server_logs = []
-logger = logging.getLogger('werkzeug')
+logger = logging.getLogger("werkzeug")
 handler = ListHandler()
-handler.setFormatter(logging.Formatter('%(asctime)s - %(message)s'))
+handler.setFormatter(logging.Formatter("%(asctime)s - %(message)s"))
 logger.addHandler(handler)
 
 app = Flask(__name__)
@@ -148,7 +148,7 @@ def run_flask():
         except:
             sock.bind(("0.0.0.0", 0))
         port = sock.getsockname()[1]
-    app.run(host='0.0.0.0', port=port, debug=False, use_reloader=False)
+    app.run(host="0.0.0.0", port=port, debug=False, use_reloader=False)
 
 
 class ServerGUI:
@@ -205,7 +205,7 @@ class ServerGUI:
 if __name__ == "__main__":
     rule_name = "LocalChatServer"
 
-    if getattr(sys, 'frozen', False) and not has_access(rule_name):
+    if getattr(sys, "frozen", False) and not has_access(rule_name):
         get_access(rule_name)
 
     try:
