@@ -175,7 +175,7 @@ class ServerGUI(ctk.CTk):
         self.sidebar = ctk.CTkFrame(self.main_frame, width=100)
         self.sidebar.grid(row=0, column=0, sticky="nsw", padx=10, pady=10)
         ctk.CTkLabel(self.sidebar, text="Connected").pack(pady=5)
-        self.connected_ips_label = ctk.CTkLabel(self.sidebar, text="", text_color="green", justify="left")
+        self.connected_ips_label = ctk.CTkLabel(self.sidebar, text="", fg_color="grey10", text_color="#00ff00", justify="left")
         self.connected_ips_label.pack(fill="both", expand=True, padx=5, pady=5)
         self.qr_button = ctk.CTkButton(self.sidebar, text="Show QR", command=lambda: qr_code_image(f"http://{get_local_ip()}:{port}"))
         self.qr_button.pack(fill="x", pady=5, padx=5)
@@ -191,7 +191,7 @@ class ServerGUI(ctk.CTk):
         self.msg_entry.bind("<Return>", lambda e: self.send_as_admin())
         self.send_btn = ctk.CTkButton(self.chat_frame, text="Send", command=self.send_as_admin, width=70)
         self.send_btn.grid(row=1, column=1, padx=5, pady=5)
-        self.remove_btn = ctk.CTkButton(self.chat_frame, text="Remove Access", fg_color="red", command=lambda: remove_access(rule_name))
+        self.remove_btn = ctk.CTkButton(self.chat_frame, text="Remove Access", fg_color="red", hover_color="darkred", command=lambda: remove_access(rule_name))
         self.remove_btn.grid(row=1, column=2, padx=(0, 5), pady=5)
         self.update_ui()
 
